@@ -1,2 +1,2 @@
-# simulation
-Final Project of Simulation, Implementing a queue
+# Simulation Final Project
+Implementing a queue with two subqueues
