@@ -1,5 +1,6 @@
 import random
 
+clock = 1
 
 class Customer:
     def __init__(self, arrival_time, service_start_time, service_time):
@@ -20,12 +21,23 @@ class PreProcessor1:
         self.mu1 = mu
         self.queue = [None] * k
 
-    def simulation(self, time_passed, ):
+    def simulation(self, time_passed, time):
+        if len(self.queue) == 0:
+            time = time + time_passed
+            temp_time = 0
+            count = 0
+            while temp_time < clock:
+                next_customer = random.expovariate(self.lamb)
+                temp_time  = temp_time + next_customer
+                if temp_time < clock:
+                    count = count + 1
+            for i in range(count):
+
+        else:
 
 
-# a simple function to sample from negative exponential
-def neg_exp(lambd):
-    return random.expovariate(lambd)
+        return time, next_customer
+
 
 
 def simulation(lambda1, lambda2, mu1, mu2, m3, sim_time):
