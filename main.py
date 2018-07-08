@@ -1,12 +1,13 @@
-import random
+import numpy
 
 clock = 1
 
+
 class Customer:
-    def __init__(self, arrival_time, service_start_time, service_time):
+    def __init__(self, arrival_time, service_start_time, mu):
         self.arrival_time = arrival_time
         self.service_start_time = service_start_time
-        self.service_time = service_time
+        self.service_time = abs(numpy.random.normal(1 / mu))
         self.service_end = -1
         self.service_wait = -1
 
@@ -16,28 +17,79 @@ class Customer:
 
 
 class PreProcessor1:
-    def __init__(self, lamb, mu, k):
+    def __init__(self, lamb, k):
         self.lamb = lamb
-        self.mu1 = mu
         self.queue = [None] * k
+        self.k = k
+        self.done = []
 
     def simulation(self, time_passed, time):
         if len(self.queue) == 0:
+            # manage the queue
             time = time + time_passed
-            temp_time = 0
-            count = 0
-            while temp_time < clock:
-                next_customer = random.expovariate(self.lamb)
-                temp_time  = temp_time + next_customer
-                if temp_time < clock:
-                    count = count + 1
-            for i in range(count):
-
+            next_customers = numpy.random.poisson(self.lamb)
+            if next_customers > self.k:
+                for i in range(self.k):
+                    self.queue[i] = Customer(time, 0, 5)
+            else:
+                for i in range(next_customers):
+                    self.queue[i] = Customer(time, 0, 5)
         else:
+            # processing
+            p_time = 0
+            while 1 - p_time > 0:
+                # find shortest customer task
+                min = 1000
+                c_count = 0 # customers count
+                for c in self.queue:
+                    if c is not None:
+                        c_count = c_count + 1
+                        if c.service_time < min:
+                            min = c.service_time
+                            c_min_index = self.queue.index(c)
+                # process
+                if min + p_time > 1:
+                    self.queue[c_min_index].service_time = min - (1 - p_time)
+                    self.queue[c_min_index].service_start_time = time
+                    self.queue[c_min_index].service_end = time + time_passed
+                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    p_time = 1
+                else:
+                    self.queue[c_min_index].service_start_time = time
+                    self.queue[c_min_index].service_end = time + time_passed
+                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    self.done.append(self.queue[c_min_index])
+                    self.queue[c_min_index] = None
+                    c_count = c_count - 1
+                    p_time = p_time + min
 
+            # manage the queue
+            time = time + time_passed
+            if len(self.queue) == 0:
+                next_customers = numpy.random.poisson(self.lamb)
+                if next_customers > self.k:
+                    for i in range(self.k):
+                        self.queue[i] = Customer(time, 0, 5)
+                else:
+                    for i in range(next_customers):
+                        self.queue[i] = Customer(time, 0, 5)
+            else:
+                next_customers = numpy.random.poisson(self.lamb)
+                if next_customers >= self.k - c_count:
+                    for c in self.queue:
+                        if c is None:
+                            self.queue[self.queue.index(c)] = Customer(time, 0, 5)
+                else:
+                    temp = next_customers  # fill only #next_customers customers in the queue
+                    for c in self.queue:
+                        if temp == 0:
+                            break
+                        else:
+                            if c is None:
+                                self.queue[self.queue.index(c)] = Customer(time, 0, 5)
+                                temp = temp - 1
 
-        return time, next_customer
-
+        return time
 
 
 def simulation(lambda1, lambda2, mu1, mu2, m3, sim_time):
@@ -55,7 +107,7 @@ def simulation(lambda1, lambda2, mu1, mu2, m3, sim_time):
 
         # calculate arrival date and service time for new customer
         if len(Customers) == 0:
-            arrival_date = neg_exp(lambd)
+            arrival_date = (lambd)
             service_start_date = arrival_date
         else:
             arrival_date += neg_exp(lambd)
