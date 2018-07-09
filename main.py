@@ -3,6 +3,14 @@ import csv
 
 clock = 1  # base unit time
 
+# for report
+phase = 0
+turn = 0
+all_customer_1 = 0
+total_done_1 = 0
+time_wait_1 = 0
+customer_in_queue_1 = 0
+
 
 class Customer:
     def __init__(self, arrival_time, service_start_time, mu):
@@ -24,6 +32,7 @@ class PreProcessor1:
         self.k = k
 
     def simulation(self, time_passed, time):
+        global phase, turn, all_customer_1, total_done_1, time_wait_1, customer_in_queue_1, clock
         # done tasks
         done = []
 
@@ -31,11 +40,15 @@ class PreProcessor1:
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
-
+        if phase > 5000:
+            customer_in_queue_1 = customer_in_queue_1 + c_count  # for average # of customer in queue
+            turn = turn + 1
         if c_count == 0:
             # manage the queue
             time = time + time_passed
             next_customers = numpy.random.poisson(self.lamb)
+            if phase > 5000:
+                all_customer_1 = all_customer_1 + next_customers  # for average blocks
             if next_customers > self.k:
                 for i in range(self.k):
                     self.queue[i] = Customer(time, -1, 5)
@@ -70,10 +83,14 @@ class PreProcessor1:
                         self.queue[c_min_index].service_start_time = time
                     self.queue[c_min_index].service_end = time + time_passed
                     self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    if phase > 5000:
+                        time_wait_1 = time_wait_1 + self.queue[c_min_index].service_wait  # for average blocks
+                        total_done_1 = total_done_1 + 1  # for average wait time
                     done.append(self.queue[c_min_index])
                     self.queue[c_min_index] = None
                     c_count = c_count - 1
                     p_time = p_time + min_s_time
+                    phase = phase + 1  # similar to done processes
 
             # manage the queue
             time = time + time_passed
@@ -100,7 +117,6 @@ class PreProcessor1:
                             if c is None:
                                 self.queue[self.queue.index(c)] = Customer(time, -1, 5)
                                 temp = temp - 1
-
         return done
 
 
@@ -296,6 +312,16 @@ class MainProcessorExtra:
 
 
 def processor_sharing():
+    global phase, turn, all_customer_1, total_done_1, time_wait_1, customer_in_queue_1, clock
+    phase = 0
+    turn = 0
+    all_customer_1 = 0
+    total_done_1 = 0
+    time_wait_1 = 0
+    customer_in_queue_1 = 0
+
+    # Main Section
+    print('Main Section Started')
     pp1 = PreProcessor1(7, 100)
     pp2 = PreProcessor2(2, 12)
     mp = MainProcessor(8)
@@ -309,6 +335,7 @@ def processor_sharing():
         time = time + clock
 
     # calculate summary statistics
+    print('General Statistics In PS : ')
     waits = [c.service_wait for c in mp.done]
     mean__wait = sum(waits) / len(waits)
     print("Mean Wait : ")
@@ -327,6 +354,21 @@ def processor_sharing():
     utilisation = sum(service__times) / time
     print("Utilisation : ")
     print(utilisation)
+
+    print("1.1. PB1 : ")
+    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.2. LQ1 : ")
+    answer = (customer_in_queue_1 / turn) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.3. WQ1 : ")
+    answer = (time_wait_1 / total_done_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
 
     # write output full data set to csv
     outfile = open('system_output_%s_simulations.csv' % simulation_times, 'w')
@@ -348,6 +390,14 @@ def processor_sharing():
 
 
 def first_come_first_served():
+    global phase, turn, all_customer_1, total_done_1, time_wait_1, customer_in_queue_1, clock
+    phase = 0
+    turn = 0
+    all_customer_1 = 0
+    total_done_1 = 0
+    time_wait_1 = 0
+    customer_in_queue_1 = 0
+
     # Extra Section
     print('Extra Section Started')
     pp1 = PreProcessor1(7, 100)
@@ -363,6 +413,7 @@ def first_come_first_served():
         time = time + clock
 
     # calculate summary statistics
+    print('General Statistics In FCFS : ')
     waits = [c.service_wait for c in mp.done]
     mean__wait = sum(waits) / len(waits)
     print("Mean Wait : ")
@@ -381,6 +432,21 @@ def first_come_first_served():
     utilisation = sum(service__times) / time
     print("Utilisation : ")
     print(utilisation)
+
+    print("1.1. PB1 : ")
+    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.2. LQ1 : ")
+    answer = (customer_in_queue_1 / turn) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.3. WQ1 : ")
+    answer = (time_wait_1 / total_done_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
 
     # write output full data set to csv
     outfile = open('system_output_%s_simulations_extra.csv' % simulation_times, 'w')
