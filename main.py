@@ -1,4 +1,5 @@
 import numpy
+import csv
 
 clock = 1  # base unit time
 
@@ -138,7 +139,7 @@ class PreProcessor2:
                 # find a random not none index
                 found = False
                 while not found:
-                    index = numpy.random.randint(0, self.k - 1)
+                    index = numpy.random.randint(0, self.k)
                     if self.queue[index] is not None:
                         found = True
 
@@ -153,9 +154,9 @@ class PreProcessor2:
                     self.queue[index].service_end = time + time_passed
                     self.queue[index].service_wait = time - self.queue[index].arrival_time
                     done.append(self.queue[index])
+                    p_time = p_time + self.queue[index].service_time
                     self.queue[index] = None
                     c_count = c_count - 1
-                    p_time = p_time + self.queue[index].service_time
 
             # manage the queue
             time = time + time_passed
@@ -206,108 +207,199 @@ class MainProcessor:
             for c_a in next_customers:
                 for c in self.queue:
                     if c is None:
-                        self.queue[next_customers.index(c)] = c_a
+                        self.queue[self.queue.index(c)] = c_a
                         c_count = c_count + 1
                         break
                 if c_count == self.k:
                     break
 
-                # process
+            # process
+            for c in self.queue:
+                if c is not None:
+                    if c.service_time - (clock / c_count) <= 0:
+                        index = self.queue.index(c)
+                        self.queue[index].service_start_time = time
+                        self.queue[index].service_end = time + time_passed
+                        self.done.append(c)
+                        self.queue[index] = None
+                    else:
+                        index = self.queue.index(c)
+                        self.queue[index].service_time = self.queue[index].service_time - (clock / c_count)
+                        self.queue[index].service_start_time = time
+
+        return None
+
+
+class MainProcessorExtra:
+    def __init__(self, k):
+        self.queue = [None] * k
+        self.k = k
+        self.done = []
+
+    def simulation(self, time_passed, time, next_customers):
+        c_count = 0  # customers count
+        for c in self.queue:
+            if c is not None:
+                c_count = c_count + 1
+
+        if len(next_customers) == 0 and c_count == 0:
+            time = time + time_passed
+
+        else:
+            # put new arrival in main processor queue (left-overs dropped!)
+            for c_a in next_customers:
+                for c in self.queue:
+                    if c is None:
+                        self.queue[self.queue.index(c)] = c_a
+                        c_count = c_count + 1
+                        break
+                if c_count == self.k:
+                    break
+
+            # process section
+            p_time = 0  # processing time
+            while clock - p_time > 0:
+                # break when there is no customer in the queue
+                if c_count == 0:
+                    break
+
+                # find shortest customer arrival time
+                min_a_time = 10000000000000000000
                 for c in self.queue:
                     if c is not None:
-                        if c.service_time - (clock/c_count) <= 0:
-                            index = self.queue.index(c)
-                            self.queue[index].service_start_time = time
-                            self.queue[index].service_end = time + time_passed
-                            self.queue[index].service_wait = 0
-                            self.done.append(c)
-                            self.queue[index] = None
-                        else:
-                            self.queue[index].service_time = self.queue[index].service_time - (clock/c_count)
-                            self.queue[index].service_start_time = time
-                            self.queue[index].service_wait = 0
+                        if c.arrival_time < min_a_time:
+                            min_a_time = c.arrival_time
+                            c_min_index = self.queue.index(c)
 
-        return time
+                # process
+                if self.queue[c_min_index].service_time + p_time > clock:
+                    self.queue[c_min_index].service_time = self.queue[c_min_index].service_time - (clock - p_time)
+                    self.queue[c_min_index].service_start_time = time
+                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    p_time = clock
+                else:
+                    self.queue[c_min_index].service_start_time = time
+                    self.queue[c_min_index].service_end = time + time_passed
+                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    self.done.append(self.queue[c_min_index])
+                    p_time = p_time + self.queue[c_min_index].service_time
+                    self.queue[c_min_index] = None
+                    c_count = c_count - 1
+                time = time + time_passed
+
+        return None
 
 
-def simulation(lambda1, lambda2, mu1, mu2, m3, sim_time):
-    # universal clock
+def processor_sharing():
+    pp1 = PreProcessor1(7, 100)
+    pp2 = PreProcessor2(2, 12)
+    mp = MainProcessor(8)
     time = 0
-
-    # processor queues
-    pre_processor_1_queue = []
-    pre_processor_2_queue = []
-    main_processor_queue = []
-
-    # ----------------------------------
-    # The actual simulation happens here:
-    while t < simulation_time:
-
-        # calculate arrival date and service time for new customer
-        if len(Customers) == 0:
-            arrival_date = (lambd)
-            service_start_date = arrival_date
-        else:
-            arrival_date += neg_exp(lambd)
-            service_start_date = max(arrival_date, Customers[-1].service_end_date)
-        service_time = neg_exp(mu)
-
-        # create new customer
-        Customers.append(Customer(arrival_date, service_start_date, service_time))
-
-        # increment clock till next end of service
-        t = arrival_date
-    # ----------------------------------
+    simulation_times = 5000000
+    while len(mp.done) < simulation_times:
+        output1 = pp1.simulation(clock, time)
+        output2 = pp2.simulation(clock, time)
+        output = output1 + output2
+        mp.simulation(clock, time, output)
+        time = time + clock
 
     # calculate summary statistics
-    Waits = [a.wait for a in Customers]
-    Mean_Wait = sum(Waits) / len(Waits)
+    waits = [c.service_wait for c in mp.done]
+    mean__wait = sum(waits) / len(waits)
+    print("Mean Wait : ")
+    print(mean__wait)
 
-    Total_Times = [a.wait + a.service_time for a in Customers]
-    Mean_Time = sum(Total_Times) / len(Total_Times)
+    total__times = [c.service_wait + c.service_time for c in mp.done]
+    mean__time = sum(total__times) / len(total__times)
+    print("Total Times : ")
+    print(mean__time)
 
-    Service_Times = [a.service_time for a in Customers]
-    Mean_Service_Time = sum(Service_Times) / len(Service_Times)
+    service__times = [c.service_time for c in mp.done]
+    mean__service__time = sum(service__times) / len(service__times)
+    print("Service Times : ")
+    print(mean__service__time)
 
-    Utilisation = sum(Service_Times) / t
+    utilisation = sum(service__times) / time
+    print("Utilisation : ")
+    print(utilisation)
 
-    # output summary statistics to screen
-    print()
-    ""
-    print
-    "Summary results:"
-    print
-    ""
-    print
-    "Number of customers: ", len(Customers)
-    print
-    "Mean Service Time: ", Mean_Service_Time
-    print
-    "Mean Wait: ", Mean_Wait
-    print
-    "Mean Time in System: ", Mean_Time
-    print
-    "Utilisation: ", Utilisation
-    print
-    ""
+    # write output full data set to csv
+    outfile = open('system_output_%s_simulations.csv' % simulation_times, 'w')
+    output = csv.writer(outfile)
+    output.writerow(
+        ['Customer', 'Arrival_Time', 'Service_Start_Time', 'Service_Time', 'Service_Wait', 'Service_End'])
+    i = 0
+    for customer in mp.done:
+        i = i + 1
+        outrow = []
+        outrow.append(i)
+        outrow.append(customer.arrival_time)
+        outrow.append(customer.service_start_time)
+        outrow.append(customer.service_time)
+        outrow.append(customer.service_wait)
+        outrow.append(customer.service_end)
+        output.writerow(outrow)
+    outfile.close()
 
-    # prompt user to output full data set to csv
-    if input("Output data to csv (True/False)? "):
-        outfile = open('MM1Q-output-(%s,%s,%s).csv' % (lambd, mu, simulation_time), 'wb')
-        output = csv.writer(outfile)
-        output.writerow(['Customer', 'Arrival_Date', 'Wait', 'Service_Start_Date', 'Service_Time', 'Service_End_Date'])
-        i = 0
-        for customer in Customers:
-            i = i + 1
-            outrow = []
-            outrow.append(i)
-            outrow.append(customer.arrival_date)
-            outrow.append(customer.wait)
-            outrow.append(customer.service_start_date)
-            outrow.append(customer.service_time)
-            outrow.append(customer.service_end_date)
-            output.writerow(outrow)
-        outfile.close()
-    print
-    ""
-    return
+
+def first_come_first_served():
+    # Extra Section
+    print('Extra Section Started')
+    pp1 = PreProcessor1(7, 100)
+    pp2 = PreProcessor2(2, 12)
+    mp = MainProcessorExtra(8)
+    time = 0
+    simulation_times = 5000000
+    while len(mp.done) < simulation_times:
+        output1 = pp1.simulation(clock, time)
+        output2 = pp2.simulation(clock, time)
+        output = output1 + output2
+        mp.simulation(clock, time, output)
+        time = time + clock
+
+    # calculate summary statistics
+    waits = [c.service_wait for c in mp.done]
+    mean__wait = sum(waits) / len(waits)
+    print("Mean Wait : ")
+    print(mean__wait)
+
+    total__times = [c.service_wait + c.service_time for c in mp.done]
+    mean__time = sum(total__times) / len(total__times)
+    print("Total Times : ")
+    print(mean__time)
+
+    service__times = [c.service_time for c in mp.done]
+    mean__service__time = sum(service__times) / len(service__times)
+    print("Service Times : ")
+    print(mean__service__time)
+
+    utilisation = sum(service__times) / time
+    print("Utilisation : ")
+    print(utilisation)
+
+    # write output full data set to csv
+    outfile = open('system_output_%s_simulations_extra.csv' % simulation_times, 'w')
+    output = csv.writer(outfile)
+    output.writerow(
+        ['Customer', 'Arrival_Time', 'Service_Start_Time', 'Service_Time', 'Service_Wait', 'Service_End'])
+    i = 0
+    for customer in mp.done:
+        i = i + 1
+        outrow = []
+        outrow.append(i)
+        outrow.append(customer.arrival_time)
+        outrow.append(customer.service_start_time)
+        outrow.append(customer.service_time)
+        outrow.append(customer.service_wait)
+        outrow.append(customer.service_end)
+        output.writerow(outrow)
+    outfile.close()
+
+
+if __name__ == '__main__':
+    Extra = False
+    Normal = True
+    if Extra:
+        first_come_first_served()
+    if Normal:
+        processor_sharing()

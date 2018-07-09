@@ -109,6 +109,19 @@ system_output_5000000_simulations
 .system_output_5000000_simulations
 system_output_5000000_simulations/
 .system_output_5000000_simulations/
+system_output_5000000_simulations.csv
+.system_output_5000000_simulations.csv
+system_output_5000000_simulations.csv/
+.system_output_5000000_simulations.csv/
+
+system_output_5000000_simulations_extra
+.system_output_5000000_simulations_extra
+system_output_5000000_simulations_extra/
+.system_output_5000000_simulations_extra/
+system_output_5000000_simulations_extra.csv
+.system_output_5000000_simulations_extra.csv
+system_output_5000000_simulations_extra.csv/
+.system_output_5000000_simulations_extra.csv/
 
 # mypy
 .mypy_cache/
