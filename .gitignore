@@ -104,5 +104,11 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# big data
+system_output_5000000_simulations
+.system_output_5000000_simulations
+system_output_5000000_simulations/
+.system_output_5000000_simulations/
+
 # mypy
 .mypy_cache/
