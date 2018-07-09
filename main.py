@@ -25,7 +25,13 @@ class PreProcessor1:
     def simulation(self, time_passed, time):
         # done tasks
         done = []
-        if len(self.queue) == 0:
+
+        c_count = 0  # customers count
+        for c in self.queue:
+            if c is not None:
+                c_count = c_count + 1
+
+        if c_count == 0:
             # manage the queue
             time = time + time_passed
             next_customers = numpy.random.poisson(self.lamb)
@@ -38,20 +44,19 @@ class PreProcessor1:
         else:
             # processing time
             p_time = 0
-            while clock - p_time > 0:
-                # find shortest customer task
-                min_s_time = 1000
-                c_count = 0  # customers count
-                for c in self.queue:
-                    if c is not None:
-                        c_count = c_count + 1
-                        if c.service_time < min_s_time:
-                            min_s_time = c.service_time
-                            c_min_index = self.queue.index(c)
 
+            while clock - p_time > 0:
                 # break when there is no customer in the queue
                 if c_count == 0:
                     break
+
+                # find shortest customer task
+                min_s_time = 1000
+                for c in self.queue:
+                    if c is not None:
+                        if c.service_time < min_s_time:
+                            min_s_time = c.service_time
+                            c_min_index = self.queue.index(c)
 
                 # process
                 if min_s_time + p_time > clock:
@@ -106,7 +111,13 @@ class PreProcessor2:
     def simulation(self, time_passed, time):
         # done tasks
         done = []
-        if len(self.queue) == 0:
+
+        c_count = 0  # customers count
+        for c in self.queue:
+            if c is not None:
+                c_count = c_count + 1
+
+        if c_count == 0:
             # manage the queue
             time = time + time_passed
             next_customers = numpy.random.poisson(self.lamb)
@@ -120,16 +131,11 @@ class PreProcessor2:
             # processing time
             p_time = 0
             while clock - p_time > 0:
-                # find a random not none index
-                c_count = 0  # customers count
-                for c in self.queue:
-                    if c is not None:
-                        c_count = c_count + 1
-
                 # break when there is no customer in the queue
                 if c_count == 0:
                     break
 
+                # find a random not none index
                 found = False
                 while not found:
                     index = numpy.random.randint(0, self.k - 1)
@@ -186,77 +192,40 @@ class MainProcessor:
         self.k = k
         self.done = []
 
-    def simulation(self, time_passed, time):
-        if len(self.queue) == 0:
-            # manage the queue
-            time = time + time_passed
-            next_customers = numpy.random.poisson(self.lamb)
-            if next_customers > self.k:
-                for i in range(self.k):
-                    self.queue[i] = Customer(time, 0, 5)
-            else:
-                for i in range(next_customers):
-                    self.queue[i] = Customer(time, 0, 5)
-        else:
-            # processing time
-            p_time = 0
-            while clock - p_time > 0:
-                # find a random not none index
-                c_count = 0  # customers count
-                for c in self.queue:
-                    if c is not None:
-                        c_count = c_count + 1
+    def simulation(self, time_passed, time, next_customers):
+        c_count = 0  # customers count
+        for c in self.queue:
+            if c is not None:
+                c_count = c_count + 1
 
-                # break when there is no customer in the queue
-                if c_count == 0:
+        if len(next_customers) == 0 and c_count == 0:
+            time = time + time_passed
+
+        else:
+            # put new arrival in main processor queue (left-overs dropped!)
+            for c_a in next_customers:
+                for c in self.queue:
+                    if c is None:
+                        self.queue[next_customers.index(c)] = c_a
+                        c_count = c_count + 1
+                        break
+                if c_count == self.k:
                     break
 
-                found = False
-                while not found:
-                    index = numpy.random.randint(0, self.k - 1)
-                    if self.queue[index] is not None:
-                        found = True
-
                 # process
-                if self.queue[index].service_time + p_time > clock:
-                    self.queue[index].service_time = self.queue[index].service_time - (clock - p_time)
-                    self.queue[index].service_start_time = time
-                    self.queue[index].service_wait = time - self.queue[index].arrival_time
-                    p_time = 1
-                else:
-                    self.queue[index].service_start_time = time
-                    self.queue[index].service_end = time + time_passed
-                    self.queue[index].service_wait = time - self.queue[index].arrival_time
-                    self.done.append(self.queue[index])
-                    self.queue[index] = None
-                    c_count = c_count - 1
-                    p_time = p_time + self.queue[index].service_time
-
-            # manage the queue
-            time = time + time_passed
-            if len(self.queue) == 0:
-                next_customers = numpy.random.poisson(self.lamb)
-                if next_customers > self.k:
-                    for i in range(self.k):
-                        self.queue[i] = Customer(time, 0, 3)
-                else:
-                    for i in range(next_customers):
-                        self.queue[i] = Customer(time, 0, 3)
-            else:
-                next_customers = numpy.random.poisson(self.lamb)
-                if next_customers >= self.k - c_count:
-                    for c in self.queue:
-                        if c is None:
-                            self.queue[self.queue.index(c)] = Customer(time, 0, 3)
-                else:
-                    temp = next_customers  # fill only #next_customers customers in the queue
-                    for c in self.queue:
-                        if temp == 0:
-                            break
+                for c in self.queue:
+                    if c is not None:
+                        if c.service_time - (clock/c_count) <= 0:
+                            index = self.queue.index(c)
+                            self.queue[index].service_start_time = time
+                            self.queue[index].service_end = time + time_passed
+                            self.queue[index].service_wait = 0
+                            self.done.append(c)
+                            self.queue[index] = None
                         else:
-                            if c is None:
-                                self.queue[self.queue.index(c)] = Customer(time, 0, 3)
-                                temp = temp - 1
+                            self.queue[index].service_time = self.queue[index].service_time - (clock/c_count)
+                            self.queue[index].service_start_time = time
+                            self.queue[index].service_wait = 0
 
         return time
 
