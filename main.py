@@ -3,13 +3,20 @@ import csv
 
 clock = 1  # base unit time
 
-# for report
+# for report pre
 phase = 0
 turn = 0
 all_customer_1 = 0
 total_done_1 = 0
 time_wait_1 = 0
 customer_in_queue_1 = 0
+
+# for report main
+all_customer_m = 0
+total_done_m = 0
+customer_in_queue_m = 0
+turn_m = 0
+phase_m = 0
 
 
 class Customer:
@@ -206,16 +213,23 @@ class PreProcessor2:
 
 
 class MainProcessor:
+
     def __init__(self, k):
         self.queue = [None] * k
         self.k = k
         self.done = []
 
     def simulation(self, time_passed, time, next_customers):
+        global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m
+
         c_count = 0  # customers count
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
+
+        if phase_m > 5000:
+            customer_in_queue_m = customer_in_queue_m + c_count
+            turn_m = turn_m + 1
 
         if len(next_customers) == 0 and c_count == 0:
             time = time + time_passed
@@ -245,21 +259,28 @@ class MainProcessor:
                         index = self.queue.index(c)
                         self.queue[index].service_time = self.queue[index].service_time - (clock / c_count)
                         self.queue[index].service_start_time = time
-
+        phase_m = phase_m + 1
         return None
 
 
 class MainProcessorExtra:
+
     def __init__(self, k):
         self.queue = [None] * k
         self.k = k
         self.done = []
 
     def simulation(self, time_passed, time, next_customers):
+        global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m
+
         c_count = 0  # customers count
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
+
+        if phase_m > 5000:
+            customer_in_queue_m = customer_in_queue_m + c_count
+            turn_m = turn_m + 1
 
         if len(next_customers) == 0 and c_count == 0:
             time = time + time_passed
@@ -312,13 +333,21 @@ class MainProcessorExtra:
 
 
 def processor_sharing():
-    global phase, turn, all_customer_1, total_done_1, time_wait_1, customer_in_queue_1, clock
+    global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m, phase, turn, all_customer_1, total_done_1, \
+        time_wait_1, customer_in_queue_1, clock
+
     phase = 0
     turn = 0
     all_customer_1 = 0
     total_done_1 = 0
     time_wait_1 = 0
     customer_in_queue_1 = 0
+
+    all_customer_m = 0
+    total_done_m = 0
+    customer_in_queue_m = 0
+    turn_m = 0
+    phase_m = 0
 
     # Main Section
     print('Main Section Started')
@@ -336,6 +365,22 @@ def processor_sharing():
 
     # calculate summary statistics
     print('General Statistics In PS : ')
+
+    print("1.1. PB1 : ")
+    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.2. LQ1 : ")
+    answer = (customer_in_queue_1 / turn) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.3. WQ1 : ")
+    answer = (time_wait_1 / total_done_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
+    
     waits = [c.service_wait for c in mp.done]
     mean__wait = sum(waits) / len(waits)
     print("Mean Wait : ")
@@ -354,21 +399,6 @@ def processor_sharing():
     utilisation = sum(service__times) / time
     print("Utilisation : ")
     print(utilisation)
-
-    print("1.1. PB1 : ")
-    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
-
-    print("1.2. LQ1 : ")
-    answer = (customer_in_queue_1 / turn) * 100
-    answer = '%' + str(answer)
-    print(answer)
-
-    print("1.3. WQ1 : ")
-    answer = (time_wait_1 / total_done_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
 
     # write output full data set to csv
     outfile = open('system_output_%s_simulations.csv' % simulation_times, 'w')
@@ -390,13 +420,21 @@ def processor_sharing():
 
 
 def first_come_first_served():
-    global phase, turn, all_customer_1, total_done_1, time_wait_1, customer_in_queue_1, clock
+    global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m, phase, turn, all_customer_1, total_done_1, \
+        time_wait_1, customer_in_queue_1, clock
+
     phase = 0
     turn = 0
     all_customer_1 = 0
     total_done_1 = 0
     time_wait_1 = 0
     customer_in_queue_1 = 0
+
+    all_customer_m = 0
+    total_done_m = 0
+    customer_in_queue_m = 0
+    turn_m = 0
+    phase_m = 0
 
     # Extra Section
     print('Extra Section Started')
