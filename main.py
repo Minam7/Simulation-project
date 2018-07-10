@@ -380,7 +380,7 @@ def processor_sharing():
     answer = (time_wait_1 / total_done_1) * 100
     answer = '%' + str(answer)
     print(answer)
-    
+
     waits = [c.service_wait for c in mp.done]
     mean__wait = sum(waits) / len(waits)
     print("Mean Wait : ")
@@ -452,6 +452,21 @@ def first_come_first_served():
 
     # calculate summary statistics
     print('General Statistics In FCFS : ')
+    print("1.1. PB1 : ")
+    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.2. LQ1 : ")
+    answer = (customer_in_queue_1 / turn) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
+    print("1.3. WQ1 : ")
+    answer = (time_wait_1 / total_done_1) * 100
+    answer = '%' + str(answer)
+    print(answer)
+
     waits = [c.service_wait for c in mp.done]
     mean__wait = sum(waits) / len(waits)
     print("Mean Wait : ")
@@ -470,21 +485,6 @@ def first_come_first_served():
     utilisation = sum(service__times) / time
     print("Utilisation : ")
     print(utilisation)
-
-    print("1.1. PB1 : ")
-    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
-
-    print("1.2. LQ1 : ")
-    answer = (customer_in_queue_1 / turn) * 100
-    answer = '%' + str(answer)
-    print(answer)
-
-    print("1.3. WQ1 : ")
-    answer = (time_wait_1 / total_done_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
 
     # write output full data set to csv
     outfile = open('system_output_%s_simulations_extra.csv' % simulation_times, 'w')
