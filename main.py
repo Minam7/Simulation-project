@@ -381,6 +381,8 @@ def processor_sharing():
         # calculate summary statistics
         print('General Statistics In PS : ')
         print('K = ' + str(k))
+        
+        ans[k] = []  # for plot
 
         print("1.1. PB1 : ")
         answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
@@ -478,6 +480,7 @@ def first_come_first_served():
         print('K = ' + str(k))
 
         ans[k] = []  # for plot
+
         print("1.1. PB1 : ")
         answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
         answer = '%' + str(answer)
