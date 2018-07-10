@@ -2,6 +2,7 @@ import numpy
 import csv
 
 clock = 1  # base unit time
+warm_up = 50  # number of ignored outcomes
 
 # for report pre
 phase = 0
@@ -47,14 +48,16 @@ class PreProcessor1:
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
-        if phase > 5000:
+
+        if phase > warm_up:
             customer_in_queue_1 = customer_in_queue_1 + c_count  # for average # of customer in queue
             turn = turn + 1
+
         if c_count == 0:
             # manage the queue
             time = time + time_passed
             next_customers = numpy.random.poisson(self.lamb)
-            if phase > 5000:
+            if phase > warm_up:
                 all_customer_1 = all_customer_1 + next_customers  # for average blocks
             if next_customers > self.k:
                 for i in range(self.k):
@@ -90,7 +93,7 @@ class PreProcessor1:
                         self.queue[c_min_index].service_start_time = time
                     self.queue[c_min_index].service_end = time + time_passed
                     self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
-                    if phase > 5000:
+                    if phase > warm_up:
                         time_wait_1 = time_wait_1 + self.queue[c_min_index].service_wait  # for average blocks
                         total_done_1 = total_done_1 + 1  # for average wait time
                     done.append(self.queue[c_min_index])
@@ -103,6 +106,8 @@ class PreProcessor1:
             time = time + time_passed
             if len(self.queue) == 0:
                 next_customers = numpy.random.poisson(self.lamb)
+                if phase > warm_up:
+                    all_customer_1 = all_customer_1 + next_customers  # for average blocks
                 if next_customers > self.k:
                     for i in range(self.k):
                         self.queue[i] = Customer(time, -1, 5)
@@ -111,6 +116,8 @@ class PreProcessor1:
                         self.queue[i] = Customer(time, -1, 5)
             else:
                 next_customers = numpy.random.poisson(self.lamb)
+                if phase > warm_up:
+                    all_customer_1 = all_customer_1 + next_customers  # for average blocks
                 if next_customers >= self.k - c_count:
                     for c in self.queue:
                         if c is None:
@@ -221,13 +228,13 @@ class MainProcessor:
 
     def simulation(self, time_passed, time, next_customers):
         global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m
-
+        all_customer_m = all_customer_m + len(next_customers)  # for calculating all arrival customers
         c_count = 0  # customers count
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
 
-        if phase_m > 5000:
+        if phase_m > warm_up:
             customer_in_queue_m = customer_in_queue_m + c_count
             turn_m = turn_m + 1
 
@@ -255,11 +262,14 @@ class MainProcessor:
                         self.queue[index].service_end = time + time_passed
                         self.done.append(c)
                         self.queue[index] = None
+                        phase_m = phase_m + 1
+                        if phase > warm_up:
+                            total_done_m = total_done_m + 1  # for block chance
+
                     else:
                         index = self.queue.index(c)
                         self.queue[index].service_time = self.queue[index].service_time - (clock / c_count)
                         self.queue[index].service_start_time = time
-        phase_m = phase_m + 1
         return None
 
 
@@ -272,13 +282,13 @@ class MainProcessorExtra:
 
     def simulation(self, time_passed, time, next_customers):
         global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m
-
+        all_customer_m = all_customer_m + len(next_customers)  # for calculating all arrival customers
         c_count = 0  # customers count
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
 
-        if phase_m > 5000:
+        if phase_m > warm_up:
             customer_in_queue_m = customer_in_queue_m + c_count
             turn_m = turn_m + 1
 
@@ -305,7 +315,7 @@ class MainProcessorExtra:
                     break
 
                 # find shortest customer arrival time
-                min_a_time = 10000000000000000000
+                min_a_time = 9999999999999
                 for c in self.queue:
                     if c is not None:
                         if c.arrival_time < min_a_time:
@@ -326,6 +336,9 @@ class MainProcessorExtra:
                     self.done.append(self.queue[c_min_index])
                     p_time = p_time + self.queue[c_min_index].service_time
                     self.queue[c_min_index] = None
+                    phase_m = phase_m + 1
+                    if phase_m > warm_up:
+                        total_done_m = total_done_m + 1  # for block chance
                     c_count = c_count - 1
                 time = time + time_passed
 
@@ -350,73 +363,81 @@ def processor_sharing():
     phase_m = 0
 
     # Main Section
-    print('Main Section Started')
-    pp1 = PreProcessor1(7, 100)
-    pp2 = PreProcessor2(2, 12)
-    mp = MainProcessor(8)
-    time = 0
-    simulation_times = 5000000
-    while len(mp.done) < simulation_times:
-        output1 = pp1.simulation(clock, time)
-        output2 = pp2.simulation(clock, time)
-        output = output1 + output2
-        mp.simulation(clock, time, output)
-        time = time + clock
+    ans = dict()
+    for k in range(8, 17):
+        print('*** Main Section Started *** \n')
+        pp1 = PreProcessor1(7, 100)
+        pp2 = PreProcessor2(2, 12)
+        mp = MainProcessor(8)
+        time = 0
+        simulation_times = 50000
+        while len(mp.done) < simulation_times:
+            output1 = pp1.simulation(clock, time)
+            output2 = pp2.simulation(clock, time)
+            output = output1 + output2
+            mp.simulation(clock, time, output)
+            time = time + clock
 
-    # calculate summary statistics
-    print('General Statistics In PS : ')
+        # calculate summary statistics
+        print('General Statistics In PS : ')
+        print('K = ' + str(k))
 
-    print("1.1. PB1 : ")
-    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
+        print("1.1. PB1 : ")
+        answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+        answer = '%' + str(answer)
+        print(answer)
 
-    print("1.2. LQ1 : ")
-    answer = (customer_in_queue_1 / turn) * 100
-    answer = '%' + str(answer)
-    print(answer)
+        print("1.2. LQ1 : ")
+        answer = (customer_in_queue_1 / turn)
+        answer = str(answer)
+        print(answer)
 
-    print("1.3. WQ1 : ")
-    answer = (time_wait_1 / total_done_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
+        print("1.3. WQ1 : ")
+        answer = (time_wait_1 / total_done_1)
+        answer = str(answer)
+        print(answer)
 
-    waits = [c.service_wait for c in mp.done]
-    mean__wait = sum(waits) / len(waits)
-    print("Mean Wait : ")
-    print(mean__wait)
+        print("2.1. PB3 : ")
+        answer = ((all_customer_m - total_done_m) / all_customer_m) * 100
+        answer = str(answer)
+        print(answer)
+        ans[k].append(answer)
 
-    total__times = [c.service_wait + c.service_time for c in mp.done]
-    mean__time = sum(total__times) / len(total__times)
-    print("Total Times : ")
-    print(mean__time)
+        warmed_up = mp.done[warm_up:]
+        total__times = [c.service_wait + c.service_time for c in warmed_up]
+        mean__time = sum(total__times) / len(total__times)
+        print("2.2. Total Times : ")
+        print(mean__time)
+        ans[k].append(mean__time)
 
-    service__times = [c.service_time for c in mp.done]
-    mean__service__time = sum(service__times) / len(service__times)
-    print("Service Times : ")
-    print(mean__service__time)
+        print("2.3. LQ3 : ")
+        answer = (customer_in_queue_m / turn_m)
+        answer = str(answer)
+        print(answer)
+        ans[k].append(answer)
 
-    utilisation = sum(service__times) / time
-    print("Utilisation : ")
-    print(utilisation)
+        print("===============")
+        print()
 
-    # write output full data set to csv
-    outfile = open('system_output_%s_simulations.csv' % simulation_times, 'w')
-    output = csv.writer(outfile)
-    output.writerow(
-        ['Customer', 'Arrival_Time', 'Service_Start_Time', 'Service_Time', 'Service_Wait', 'Service_End'])
-    i = 0
-    for customer in mp.done:
-        i = i + 1
-        outrow = []
-        outrow.append(i)
-        outrow.append(customer.arrival_time)
-        outrow.append(customer.service_start_time)
-        outrow.append(customer.service_time)
-        outrow.append(customer.service_wait)
-        outrow.append(customer.service_end)
-        output.writerow(outrow)
-    outfile.close()
+        '''
+        # write output full data set to csv
+        outfile = open('system_output_%s_simulations.csv' % simulation_times, 'w')
+        output = csv.writer(outfile)
+        output.writerow(
+            ['Customer', 'Arrival_Time', 'Service_Start_Time', 'Service_Time', 'Service_Wait', 'Service_End'])
+        i = 0
+        for customer in mp.done:
+            i = i + 1
+            outrow = []
+            outrow.append(i)
+            outrow.append(customer.arrival_time)
+            outrow.append(customer.service_start_time)
+            outrow.append(customer.service_time)
+            outrow.append(customer.service_wait)
+            outrow.append(customer.service_end)
+            output.writerow(outrow)
+        outfile.close()
+        '''
 
 
 def first_come_first_served():
@@ -437,72 +458,82 @@ def first_come_first_served():
     phase_m = 0
 
     # Extra Section
-    print('Extra Section Started')
-    pp1 = PreProcessor1(7, 100)
-    pp2 = PreProcessor2(2, 12)
-    mp = MainProcessorExtra(8)
-    time = 0
-    simulation_times = 5000000
-    while len(mp.done) < simulation_times:
-        output1 = pp1.simulation(clock, time)
-        output2 = pp2.simulation(clock, time)
-        output = output1 + output2
-        mp.simulation(clock, time, output)
-        time = time + clock
+    ans = dict()
+    for k in range(8, 17):
+        print('*** Extra Section Started *** \n')
+        pp1 = PreProcessor1(7, 100)
+        pp2 = PreProcessor2(2, 12)
+        mp = MainProcessorExtra(k)
+        time = 0
+        simulation_times = 50000
+        while len(mp.done) < simulation_times:
+            output1 = pp1.simulation(clock, time)
+            output2 = pp2.simulation(clock, time)
+            output = output1 + output2
+            mp.simulation(clock, time, output)
+            time = time + clock
 
-    # calculate summary statistics
-    print('General Statistics In FCFS : ')
-    print("1.1. PB1 : ")
-    answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
+        # calculate summary statistics
+        print('General Statistics In FCFS : ')
+        print('K = ' + str(k))
 
-    print("1.2. LQ1 : ")
-    answer = (customer_in_queue_1 / turn) * 100
-    answer = '%' + str(answer)
-    print(answer)
+        ans[k] = []  # for plot
+        print("1.1. PB1 : ")
+        answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+        answer = '%' + str(answer)
+        print(answer)
 
-    print("1.3. WQ1 : ")
-    answer = (time_wait_1 / total_done_1) * 100
-    answer = '%' + str(answer)
-    print(answer)
+        print("1.2. LQ1 : ")
+        answer = (customer_in_queue_1 / turn)
+        answer = str(answer)
+        print(answer)
 
-    waits = [c.service_wait for c in mp.done]
-    mean__wait = sum(waits) / len(waits)
-    print("Mean Wait : ")
-    print(mean__wait)
+        print("1.3. WQ1 : ")
+        answer = (time_wait_1 / total_done_1)
+        answer = str(answer)
+        print(answer)
 
-    total__times = [c.service_wait + c.service_time for c in mp.done]
-    mean__time = sum(total__times) / len(total__times)
-    print("Total Times : ")
-    print(mean__time)
+        print("2.1. PB3 : ")
+        answer = ((all_customer_m - total_done_m) / all_customer_m) * 100
+        answer = str(answer)
+        print(answer)
+        ans[k].append(answer)
 
-    service__times = [c.service_time for c in mp.done]
-    mean__service__time = sum(service__times) / len(service__times)
-    print("Service Times : ")
-    print(mean__service__time)
+        warmed_up = mp.done[warm_up:]
+        total__times = [c.service_wait + c.service_time for c in warmed_up]
+        mean__time = sum(total__times) / len(total__times)
+        print("2.2. Total Times : ")
+        print(mean__time)
+        ans[k].append(mean__time)
 
-    utilisation = sum(service__times) / time
-    print("Utilisation : ")
-    print(utilisation)
+        print("2.3. LQ3 : ")
+        answer = (customer_in_queue_m / turn_m)
+        answer = str(answer)
+        print(answer)
+        ans[k].append(answer)
 
-    # write output full data set to csv
-    outfile = open('system_output_%s_simulations_extra.csv' % simulation_times, 'w')
-    output = csv.writer(outfile)
-    output.writerow(
-        ['Customer', 'Arrival_Time', 'Service_Start_Time', 'Service_Time', 'Service_Wait', 'Service_End'])
-    i = 0
-    for customer in mp.done:
-        i = i + 1
-        outrow = []
-        outrow.append(i)
-        outrow.append(customer.arrival_time)
-        outrow.append(customer.service_start_time)
-        outrow.append(customer.service_time)
-        outrow.append(customer.service_wait)
-        outrow.append(customer.service_end)
-        output.writerow(outrow)
-    outfile.close()
+        print("===============")
+        print()
+
+        '''
+        # write output full data set to csv
+        outfile = open('system_output_%s_simulations_extra.csv' % simulation_times, 'w')
+        output = csv.writer(outfile)
+        output.writerow(
+            ['Customer', 'Arrival_Time', 'Service_Start_Time', 'Service_Time', 'Service_Wait', 'Service_End'])
+        i = 0
+        for customer in mp.done:
+            i = i + 1
+            outrow = []
+            outrow.append(i)
+            outrow.append(customer.arrival_time)
+            outrow.append(customer.service_start_time)
+            outrow.append(customer.service_time)
+            outrow.append(customer.service_wait)
+            outrow.append(customer.service_end)
+            output.writerow(outrow)
+        outfile.close()
+        '''
 
 
 if __name__ == '__main__':
