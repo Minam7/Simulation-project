@@ -14,6 +14,7 @@ all_customer_1 = 0
 total_done_1 = 0
 time_wait_1 = 0
 customer_in_queue_1 = 0
+blocked_1 = 0
 
 # for report main
 all_customer_m = 0
@@ -21,6 +22,7 @@ total_done_m = 0
 customer_in_queue_m = 0
 turn_m = 0
 phase_m = 0
+blocked_m = 0
 
 
 class Customer:
@@ -148,11 +150,9 @@ class PreProcessor1:
         wait_1 = time_wait_1 - pre_wait
         customer_1 = all_customer_1 - pre_all_customer_1
         q = customer_in_queue_1 - pre_q
-        t = turn - pre_turn
 
         change_in_queue = len(self.queue) - change_in_queue
-
-        return done, customer_1, wait_1, q, t, change_in_queue
+        return done, customer_1, wait_1, q, change_in_queue
 
 
 class PreProcessor2:
@@ -301,8 +301,7 @@ class MainProcessor:
                         self.queue[index].service_start_time = time
         now_done = total_done_m - pre_done
         q = customer_in_queue_m - pre_q
-        t = turn_m - pre_turn
-        return len(next_customers), now_done, q, t, tot_time, change_in_queue
+        return len(next_customers), now_done, q, tot_time, change_in_queue
 
 
 class MainProcessorExtra:
@@ -379,7 +378,7 @@ class MainProcessorExtra:
 
 def processor_sharing():
     global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m, phase, turn, all_customer_1, total_done_1, \
-        time_wait_1, customer_in_queue_1, clock
+        time_wait_1, customer_in_queue_1, clock, blocked_1, blocked_m
 
     phase = 0
     turn = 0
@@ -403,29 +402,29 @@ def processor_sharing():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 5000000
+        simulation_times = 500000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
         while len(mp.done) < simulation_times:
             output1, all_customer_per_simulation_1, time_wait_per_simulation_1, \
-            customer_in_queue_per_simulation_1, turn_1_per_simulation = pp1.simulation(
+            customer_in_queue_per_simulation_1, change_per_simulation = pp1.simulation(
                 clock, time)
-
+            blocked_1 += change_per_simulation
             output2 = pp2.simulation(clock, time)
             output = output1 + output2
 
             all_customer_per_simulation_m, done_customer_per_simulation_m, \
-            customer_in_queue_per_simulation_m, turn_m_per_simulation, tot_m = mp.simulation(
+            customer_in_queue_per_simulation_m, tot_m, change_per_simulation_m = mp.simulation(
                 clock, time, output)
-
+            blocked_m += change_per_simulation_m
             if phase > warm_up:
-                prec_val['a'].append(calc_pb(all_customer_per_simulation_1, len(output1)))
-                prec_val['b'].append(calc_lq(customer_in_queue_per_simulation_1, turn_1_per_simulation))
+                prec_val['a'].append(calc_pb(all_customer_per_simulation_1, change_per_simulation))
+                prec_val['b'].append(calc_lq(customer_in_queue_per_simulation_1))
                 prec_val['c'].append(calc_wq(time_wait_per_simulation_1, len(output1)))
-                prec_val['d'].append(calc_pb(all_customer_per_simulation_m, done_customer_per_simulation_m))
+                prec_val['d'].append(calc_pb(all_customer_per_simulation_m, change_per_simulation_m))
                 prec_val['e'].append(calc_tot_time(tot_m))
-                prec_val['f'].append(calc_lq(customer_in_queue_per_simulation_m, turn_m_per_simulation))
+                prec_val['f'].append(calc_lq(customer_in_queue_per_simulation_m))
                 # all_precs = calc_all_precisions(simulation_R, prec_val)
                 simulation_R = simulation_R + 1
                 '''
@@ -509,8 +508,7 @@ def processor_sharing():
         print("1.1 PB1 precision : ", p['a'])
         print()
 
-
-        answer = calc_lq(customer_in_queue_1, turn)
+        answer = calc_lq(customer_in_queue_1) / turn
         answer = str(answer)
         print("1.2. LQ1 : ", answer)
         print("1.2. LQ1 precision : ", p['b'])
@@ -522,7 +520,7 @@ def processor_sharing():
         print("1.3. WQ1 precision : ", p['c'])
         print()
 
-        answer = calc_pb(all_customer_m, total_done_m)
+        answer = calc_pb_off(all_customer_m, total_done_m)
         answer = '%' + str(answer)
         print("2.1. PB3 : ", answer, "%")
         print("2.1. PB3 precision : ", p['d'])
@@ -536,7 +534,7 @@ def processor_sharing():
         ans[k].append(mean__time)
         print()
 
-        answer = calc_lq(customer_in_queue_m, turn_m)
+        answer = calc_lq(customer_in_queue_m) / turn_m
         answer = str(answer)
         print("2.3. LQ3 : ", answer)
         print("2.3. LQ3 : ", p['f'])
@@ -590,18 +588,23 @@ def compute_precision(data_in, r_in):
     return prec
 
 
-def calc_pb(all_customer, total_done):
+def calc_pb(all_customer, block):
     if all_customer == 0:
         return 0
-    pb_res = ((all_customer - total_done) / all_customer) * 100
+    pb_res = (block / all_customer) * 100
 
     return pb_res
 
 
-def calc_lq(customer_in_queue, turn_in):
-    if turn_in == 0:
+def calc_pb_off(all_customer, done_in):
+    if all_customer == 0:
         return 0
-    lq_res = customer_in_queue / turn_in
+    pb_res = ((all_customer - done_in) / all_customer) * 100
+    return pb_res
+
+
+def calc_lq(customer_in_queue):
+    lq_res = customer_in_queue
     return lq_res
 
 
