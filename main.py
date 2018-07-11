@@ -5,7 +5,7 @@ import math
 # import csv
 
 clock = 1  # base unit time
-warm_up = 50  # number of ignored outcomes
+warm_up = 5000  # number of ignored outcomes
 
 # for report pre
 phase = 0
@@ -410,7 +410,7 @@ def processor_sharing():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 50000
+        simulation_times = 1000000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
@@ -572,7 +572,7 @@ def processor_sharing():
         outfile.close()
     '''
 
-    show_plots(ans)
+    show_plots(ans, 0)
 
 
 def make_dict_for_data():
@@ -601,13 +601,6 @@ def calc_pb(all_customer, block):
         return 0
     pb_res = (block / all_customer) * 100
 
-    return pb_res
-
-
-def calc_pb_off(all_customer, done_in):
-    if all_customer == 0:
-        return 0
-    pb_res = ((all_customer - done_in) / all_customer) * 100
     return pb_res
 
 
@@ -643,25 +636,32 @@ def calc_all_precisions(Rin, pre_data):
     return res
 
 
-def show_plots(data_in):
+def show_plots(data_in, flag):
     pb3, tot_time, lq3 = convert_dict_values(data_in)
+    tit1 = 'Probability of Blocking customer in Main Server'
+    tit2 = 'Average Total Process Time in Main Server'
+    tit3 = 'Average Process Queue Size in Main Server'
+    if flag != 0:
+        tit1 = tit1 + ' FCFS'
+        tit2 = tit2 + ' FCFS'
+        tit3 = tit3 + ' FCFS'
     data_key = data_in.keys()
     plt.bar(data_key, pb3, color="green", align='center', alpha=0.5)
     plt.ylabel('PB3')
     plt.xlabel('K')
-    plt.title('Probability of Blocking customer in Main Server FCFS')
+    plt.title(tit1)
     plt.show()
 
     plt.bar(data_key, tot_time, color="red", align='center', alpha=0.5)
     plt.ylabel('Total Time')
     plt.xlabel('K')
-    plt.title('Average Total Process Time in Main Server FCFS')
+    plt.title(tit2)
     plt.show()
 
     plt.bar(data_key, lq3, align='center', alpha=0.5)
     plt.ylabel('LQ3')
     plt.xlabel('K')
-    plt.title('Average Process Queue Size in Main Server FCFS')
+    plt.title(tit3)
     plt.show()
 
 
@@ -703,7 +703,7 @@ def first_come_first_served():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessorExtra(k)
         time = 0
-        simulation_times = 50000
+        simulation_times = 1000000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
@@ -864,7 +864,7 @@ def first_come_first_served():
         outfile.close()
     '''
 
-    show_plots(ans)
+    show_plots(ans, 1)
 
 
 if __name__ == '__main__':
