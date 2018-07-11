@@ -52,9 +52,12 @@ class PreProcessor1:
         pre_wait = time_wait_1
         pre_q = customer_in_queue_1
         pre_turn = turn
+        change_in_queue = 0  # for number of dropped customer
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
+
+        change_in_queue = c_count
 
         if phase > warm_up:
             customer_in_queue_1 = customer_in_queue_1 + c_count  # for average # of customer in queue
@@ -72,6 +75,9 @@ class PreProcessor1:
             else:
                 for i in range(next_customers):
                     self.queue[i] = Customer(time, -1, 5)
+
+            change_in_queue = len(self.queue) - change_in_queue
+
         else:
             # processing time
             p_time = 0
@@ -138,11 +144,15 @@ class PreProcessor1:
                             if c is None:
                                 self.queue[self.queue.index(c)] = Customer(time, -1, 5)
                                 temp = temp - 1
+
         wait_1 = time_wait_1 - pre_wait
         customer_1 = all_customer_1 - pre_all_customer_1
         q = customer_in_queue_1 - pre_q
         t = turn - pre_turn
-        return done, customer_1, wait_1, q, t
+
+        change_in_queue = len(self.queue) - change_in_queue
+
+        return done, customer_1, wait_1, q, t, change_in_queue
 
 
 class PreProcessor2:
