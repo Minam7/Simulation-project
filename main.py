@@ -246,10 +246,11 @@ class MainProcessor:
         pre_done = total_done_m
         pre_q = customer_in_queue_m
         pre_turn = turn_m
+        change_in_queue = 0  # for number of dropped customer
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
-
+        change_in_queue = c_count
         if phase_m > warm_up:
             customer_in_queue_m = customer_in_queue_m + c_count
             turn_m = turn_m + 1
@@ -268,7 +269,7 @@ class MainProcessor:
                         break
                 if c_count == self.k:
                     break
-
+            change_in_queue = c_count - change_in_queue  # number of dropped customer
             # process
             for c in self.queue:
                 if c is not None:
@@ -291,7 +292,7 @@ class MainProcessor:
         now_done = total_done_m - pre_done
         q = customer_in_queue_m - pre_q
         t = turn_m - pre_turn
-        return len(next_customers), now_done, q, t, tot_time
+        return len(next_customers), now_done, q, t, tot_time, change_in_queue
 
 
 class MainProcessorExtra:
@@ -392,7 +393,7 @@ def processor_sharing():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 1000000
+        simulation_times = 5000000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
