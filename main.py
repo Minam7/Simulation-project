@@ -1,5 +1,8 @@
 import numpy
-import csv
+import matplotlib.pyplot as plt
+import math
+
+# import csv
 
 clock = 1  # base unit time
 warm_up = 50  # number of ignored outcomes
@@ -381,39 +384,38 @@ def processor_sharing():
         # calculate summary statistics
         print('General Statistics In PS : ')
         print('K = ' + str(k))
-        
+
         ans[k] = []  # for plot
 
         print("1.1. PB1 : ")
-        answer = ((all_customer_1 - total_done_1) / all_customer_1) * 100
+        answer = calc_pb(all_customer_1, total_done_1)
         answer = '%' + str(answer)
         print(answer)
 
         print("1.2. LQ1 : ")
-        answer = (customer_in_queue_1 / turn)
+        answer = calc_lq(customer_in_queue_1, turn)
         answer = str(answer)
         print(answer)
 
         print("1.3. WQ1 : ")
-        answer = (time_wait_1 / total_done_1)
+        answer = calc_wq(time_wait_1, total_done_1)
         answer = str(answer)
         print(answer)
 
         print("2.1. PB3 : ")
-        answer = ((all_customer_m - total_done_m) / all_customer_m) * 100
+        answer = calc_pb(all_customer_m, total_done_m)
         answer = str(answer)
         print(answer)
         ans[k].append(answer)
 
         warmed_up = mp.done[warm_up:]
-        total__times = [c.service_wait + c.service_time for c in warmed_up]
-        mean__time = sum(total__times) / len(total__times)
+        mean__time = calc_tot_time(warmed_up)
         print("2.2. Total Times : ")
         print(mean__time)
         ans[k].append(mean__time)
 
         print("2.3. LQ3 : ")
-        answer = (customer_in_queue_m / turn_m)
+        answer = calc_lq(customer_in_queue_m, turn_m)
         answer = str(answer)
         print(answer)
         ans[k].append(answer)
@@ -440,6 +442,71 @@ def processor_sharing():
             output.writerow(outrow)
         outfile.close()
         '''
+
+    show_plots(ans)
+
+
+def compute_precision(data_in, r_in):
+    mean = sum(data_in) / len(data_in)
+    std = math.sqrt(sum((x - mean) ** 2 for x in data_in) / len(data_in))
+    prec = 1.96 * std * (1 / (math.sqrt(r_in) * mean))
+    return prec
+
+
+def calc_pb(all_customer, total_done):
+    pb_res = ((all_customer - total_done) / all_customer) * 100
+    return pb_res
+
+
+def calc_lq(customer_in_queue, turn_in):
+    lq_res = customer_in_queue / turn_in
+    return lq_res
+
+
+def calc_wq(time_wait, total_done):
+    wq_res = time_wait / total_done
+    return wq_res
+
+
+def calc_tot_time(warm):
+    total_times = [c.service_wait + c.service_time for c in warm]
+    mean_time = sum(total_times) / len(total_times)
+    return mean_time
+
+
+def show_plots(data_in):
+    pb3, tot_time, lq3 = convert_dict_values(data_in)
+    data_key = data_in.keys()
+    plt.bar(data_key, pb3, color="green", align='center', alpha=0.5)
+    plt.ylabel('PB3')
+    plt.xlabel('K')
+    plt.title('Probability of Blocking customer in Main Server')
+    plt.show()
+
+    plt.bar(data_key, tot_time, color="red", align='center', alpha=0.5)
+    plt.ylabel('Total Time')
+    plt.xlabel('K')
+    plt.title('Average Total Process Time in Main Server')
+    plt.show()
+
+    plt.bar(data_key, lq3, align='center', alpha=0.5)
+    plt.ylabel('LQ3')
+    plt.xlabel('K')
+    plt.title('Average Process Queue Size in Main Server')
+    plt.show()
+
+
+def convert_dict_values(dict_in):
+    # PB3
+    pb3_out = list()
+    tot_time_out = list()
+    lq3_out = list()
+    for item in dict_in.keys():
+        pb3_out.append(dict_in[item][0])
+        tot_time_out.append(dict_in[item][1])
+        lq3_out.append(dict_in[item][2])
+
+    return pb3_out, tot_time_out, lq3_out
 
 
 def first_come_first_served():
@@ -540,7 +607,7 @@ def first_come_first_served():
 
 
 if __name__ == '__main__':
-    Extra = True
+    Extra = False
     Normal = True
     if Normal:
         processor_sharing()
