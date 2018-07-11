@@ -386,13 +386,13 @@ def processor_sharing():
     # Main Section
     ans = dict()
 
-    for k in range(8, 10):
+    for k in range(8, 17):
         print('*** Main Section Started *** \n')
         pp1 = PreProcessor1(7, 100)
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 50000
+        simulation_times = 500000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
@@ -405,7 +405,7 @@ def processor_sharing():
             output = output1 + output2
 
             all_customer_per_simulation_m, done_customer_per_simulation_m, \
-            customer_in_queue_per_simulation_m, turn_m_per_simulation = mp.simulation(
+            customer_in_queue_per_simulation_m, turn_m_per_simulation, tot_m = mp.simulation(
                 clock, time, output)
 
             if phase > warm_up:
@@ -413,11 +413,11 @@ def processor_sharing():
                 prec_val['b'].append(calc_lq(customer_in_queue_per_simulation_1, turn_1_per_simulation))
                 prec_val['c'].append(calc_wq(time_wait_per_simulation_1, len(output1)))
                 prec_val['d'].append(calc_pb(all_customer_per_simulation_m, done_customer_per_simulation_m))
-                prec_val['e'].append(calc_tot_time(all_customer_per_simulation_1, len(output1)))
+                prec_val['e'].append(calc_tot_time(tot_m))
                 prec_val['f'].append(calc_lq(customer_in_queue_per_simulation_m, turn_m_per_simulation))
-                all_precs = calc_all_precisions(simulation_R, prec_val)
+                # all_precs = calc_all_precisions(simulation_R, prec_val)
                 simulation_R = simulation_R + 1
-
+                '''
                 if all_precs['a'] > 0 and all_precs['a'] < 0.05 and all_done[0] == 0:
                     print("reached pb1 precision in:", simulation_R - 1)
                     all_done[0] = 1
@@ -481,55 +481,56 @@ def processor_sharing():
 
                     print("===============")
                     print()
-
+                '''
             time = time + clock
 
         p = calc_all_precisions(simulation_R - 1, prec_val)
         # calculate summary statistics
         print('General Statistics In PS : ')
         print('K = ' + str(k))
-        print('Simulation time = ' + str(simulation_R))
+        print('Simulation Rounds = ' + str(simulation_R))
         ans[k] = []  # for plot
 
-        print("1.1. PB1 : ")
+        print()
         answer = calc_pb(all_customer_1, total_done_1)
         answer = '%' + str(answer)
-        print(answer)
+        print("1.1. PB1 : ", answer)
         print("1.1 PB1 precision : ", p['a'])
         print()
 
-        print("1.2. LQ1 : ")
+
         answer = calc_lq(customer_in_queue_1, turn)
         answer = str(answer)
-        print(answer)
+        print("1.2. LQ1 : ", answer)
         print("1.2. LQ1 precision : ", p['b'])
+        print()
 
-        print("1.3. WQ1 : ")
         answer = calc_wq(time_wait_1, total_done_1)
         answer = str(answer)
-        print(answer)
+        print("1.3. WQ1 : ", answer)
         print("1.3. WQ1 precision : ", p['c'])
+        print()
 
-        print("2.1. PB3 : ")
         answer = calc_pb(all_customer_m, total_done_m)
         answer = str(answer)
-        print(answer)
+        print("2.1. PB3 : ", answer)
         print("2.1. PB3 precision : ", p['d'])
         ans[k].append(answer)
+        print()
 
         warmed_up = mp.done[warm_up:]
         mean__time = calc_tot_time(warmed_up)
-        print("2.2. Total Times : ")
-        print(mean__time)
+        print("2.2. Total Times : ", mean__time)
         print("2.2. Total Times : ", p['e'])
         ans[k].append(mean__time)
+        print()
 
-        print("2.3. LQ3 : ")
         answer = calc_lq(customer_in_queue_m, turn_m)
         answer = str(answer)
-        print(answer)
+        print("2.3. LQ3 : ", answer)
         print("2.3. LQ3 : ", p['f'])
         ans[k].append(answer)
+        print()
 
         print("===============")
         print()
@@ -571,29 +572,40 @@ def make_dict_for_data():
 def compute_precision(data_in, r_in):
     mean = sum(data_in) / len(data_in)
     std = math.sqrt(sum((x - mean) ** 2 for x in data_in) / len(data_in))
+    if r_in == 0 or mean == 0:
+        return 0
     prec = 1.96 * std * (1 / (math.sqrt(r_in) * mean))
 
     return prec
 
 
 def calc_pb(all_customer, total_done):
+    if all_customer == 0:
+        return 0
     pb_res = ((all_customer - total_done) / all_customer) * 100
 
     return pb_res
 
 
 def calc_lq(customer_in_queue, turn_in):
+    if turn_in == 0:
+        return 0
     lq_res = customer_in_queue / turn_in
     return lq_res
 
 
 def calc_wq(time_wait, total_done):
+    if total_done == 0:
+        return 0
     wq_res = time_wait / total_done
+
     return wq_res
 
 
 def calc_tot_time(warm):
     total_times = [c.service_wait + c.service_time for c in warm]
+    if total_times == 0 or len(total_times) == 0:
+        return 0
     mean_time = sum(total_times) / len(total_times)
     return mean_time
 
