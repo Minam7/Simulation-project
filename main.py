@@ -241,6 +241,8 @@ class MainProcessor:
         global phase_m, all_customer_m, total_done_m, customer_in_queue_m, turn_m
         all_customer_m = all_customer_m + len(next_customers)  # for calculating all arrival customers
         c_count = 0  # customers count
+        tot_time = []  # for calculating total time of a customer in system
+
         pre_done = total_done_m
         pre_q = customer_in_queue_m
         pre_turn = turn_m
@@ -272,9 +274,11 @@ class MainProcessor:
                 if c is not None:
                     if c.service_time - (clock / c_count) <= 0:
                         index = self.queue.index(c)
-                        self.queue[index].service_start_time = time
+                        if self.queue[index].service_start_time == -1:
+                            self.queue[index].service_start_time = time
                         self.queue[index].service_end = time + time_passed
                         self.done.append(c)
+                        tot_time.append(c)  # customer done in one clock
                         self.queue[index] = None
                         phase_m = phase_m + 1
                         if phase > warm_up:
@@ -287,7 +291,7 @@ class MainProcessor:
         now_done = total_done_m - pre_done
         q = customer_in_queue_m - pre_q
         t = turn_m - pre_turn
-        return len(next_customers), now_done, q, t
+        return len(next_customers), now_done, q, t, tot_time
 
 
 class MainProcessorExtra:
