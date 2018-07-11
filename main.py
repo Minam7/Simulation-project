@@ -538,14 +538,14 @@ def processor_sharing():
         warmed_up = mp.done[warm_up:]
         mean__time = calc_tot_time(warmed_up)
         print("2.2. Total Times : ", mean__time)
-        print("2.2. Total Times : ", p['e'])
+        print("2.2. Total Times precision: ", p['e'])
         ans[k].append(mean__time)
         print()
 
         answer = calc_lq(customer_in_queue_m) / turn_m
         answer = str(answer)
         print("2.3. LQ3 : ", answer)
-        print("2.3. LQ3 : ", p['f'])
+        print("2.3. LQ3 precision: ", p['f'])
         ans[k].append(answer)
         print()
 
@@ -830,14 +830,14 @@ def first_come_first_served():
         warmed_up = mp.done[warm_up:]
         mean__time = calc_tot_time(warmed_up)
         print("2.2. Total Times : ", mean__time)
-        print("2.2. Total Times : ", p['e'])
+        print("2.2. Total Times precision: ", p['e'])
         ans[k].append(mean__time)
         print()
 
         answer = calc_lq(customer_in_queue_m) / turn_m
         answer = str(answer)
         print("2.3. LQ3 : ", answer)
-        print("2.3. LQ3 : ", p['f'])
+        print("2.3. LQ3 precision: ", p['f'])
         ans[k].append(answer)
         print()
 
