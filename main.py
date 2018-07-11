@@ -27,7 +27,7 @@ class Customer:
     def __init__(self, arrival_time, service_start_time, mu):
         self.arrival_time = arrival_time
         self.service_start_time = service_start_time
-        self.service_time = abs(numpy.random.normal(1 / mu))
+        self.service_time = abs(numpy.random.exponential(1 / mu))
         self.service_end = -1
         self.service_wait = -1
 
@@ -262,7 +262,7 @@ class MainProcessor:
             for c_a in next_customers:
                 for c in self.queue:
                     if c is None:
-                        c_a.service_time = abs(numpy.random.normal(1 / 1))
+                        c_a.service_time = abs(numpy.random.exponential(1 / 1))
                         self.queue[self.queue.index(c)] = c_a
                         c_count = c_count + 1
                         break
@@ -321,7 +321,7 @@ class MainProcessorExtra:
             for c_a in next_customers:
                 for c in self.queue:
                     if c is None:
-                        c_a.service_time = abs(numpy.random.normal(1 / 1))
+                        c_a.service_time = abs(numpy.random.exponential(1 / 1))
                         self.queue[self.queue.index(c)] = c_a
                         c_count = c_count + 1
                         break
