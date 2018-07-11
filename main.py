@@ -392,7 +392,7 @@ def processor_sharing():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 1000000
+        simulation_times = 5000000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
@@ -512,8 +512,8 @@ def processor_sharing():
         print()
 
         answer = calc_pb(all_customer_m, total_done_m)
-        answer = str(answer)
-        print("2.1. PB3 : ", answer)
+        answer = '%' + str(answer)
+        print("2.1. PB3 : ", answer, "%")
         print("2.1. PB3 precision : ", p['d'])
         ans[k].append(answer)
         print()
