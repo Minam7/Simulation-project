@@ -392,7 +392,7 @@ def processor_sharing():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 500000
+        simulation_times = 1000000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
