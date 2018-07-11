@@ -371,6 +371,7 @@ class MainProcessorExtra:
                     self.queue[c_min_index].service_end = time + time_passed
                     self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
                     self.done.append(self.queue[c_min_index])
+                    tot_time.append(self.queue[c_min_index])
                     p_time = p_time + self.queue[c_min_index].service_time
                     self.queue[c_min_index] = None
                     phase_m = phase_m + 1
