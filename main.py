@@ -513,8 +513,8 @@ def processor_sharing():
         print()
 
         answer = calc_pb(all_customer_m, total_done_m)
-        answer = str(answer)
-        print("2.1. PB3 : ", answer)
+        answer = '%' + str(answer)
+        print("2.1. PB3 : ", answer, "%")
         print("2.1. PB3 precision : ", p['d'])
         ans[k].append(answer)
         print()
