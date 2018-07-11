@@ -529,7 +529,7 @@ def processor_sharing():
 
         answer = calc_pb(all_customer_m, blocked_m)
         answer = '%' + str(answer)
-        print("2.1. PB3 : ", answer, "%")
+        print("2.1. PB3 : ", answer)
         print("2.1. PB3 precision : ", p['d'])
         ans[k].append(answer)
         print()
@@ -821,7 +821,7 @@ def first_come_first_served():
 
         answer = calc_pb(all_customer_m, blocked_m)
         answer = '%' + str(answer)
-        print("2.1. PB3 : ", answer, "%")
+        print("2.1. PB3 : ", answer)
         print("2.1. PB3 precision : ", p['d'])
         ans[k].append(answer)
         print()
