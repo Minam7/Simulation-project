@@ -29,7 +29,7 @@ class Customer:
     def __init__(self, arrival_time, service_start_time, mu):
         self.arrival_time = arrival_time
         self.service_start_time = service_start_time
-        self.service_time = abs(numpy.random.exponential(1/mu))
+        self.service_time = abs(numpy.random.exponential(1 / mu))
         self.service_end = -1
         self.service_wait = 0
 
@@ -75,7 +75,7 @@ class PreProcessor1:
                     self.queue[i] = Customer(time, -1, 5)
 
             if phase > warm_up:
-                dropped = next_customers - (len(self.queue) - dropped)
+                dropped = next_customers - len(self.queue)
 
         else:
             # processing time
@@ -98,15 +98,13 @@ class PreProcessor1:
                 if min_s_time + p_time > clock:
                     self.queue[c_min_index].service_time = min_s_time - (clock - p_time)
                     self.queue[c_min_index].service_start_time = time
-                    self.queue[c_min_index].service_wait = self.queue[c_min_index].service_wait + (
-                            time - self.queue[c_min_index].arrival_time)
                     p_time = clock
                 else:
                     if self.queue[c_min_index].service_start_time == -1:
                         self.queue[c_min_index].service_start_time = time
                     self.queue[c_min_index].service_end = time + time_passed
                     self.queue[c_min_index].service_wait = self.queue[c_min_index].service_wait + (
-                            time - self.queue[c_min_index].arrival_time)
+                            self.queue[c_min_index].service_start_time - self.queue[c_min_index].arrival_time)
                     if phase > warm_up:
                         time_wait_1 = time_wait_1 + self.queue[c_min_index].service_wait  # for average blocks
                         total_done_1 = total_done_1 + 1  # for average wait time
@@ -116,6 +114,7 @@ class PreProcessor1:
                     p_time = p_time + min_s_time
                     phase = phase + 1  # similar to done processes
 
+            dropped = c_count
             # manage the queue
             time = time + time_passed
             if len(self.queue) == 0:
@@ -125,9 +124,11 @@ class PreProcessor1:
                 if next_customers > self.k:
                     for i in range(self.k):
                         self.queue[i] = Customer(time, -1, 5)
+                        c_count = c_count + 1
                 else:
                     for i in range(next_customers):
                         self.queue[i] = Customer(time, -1, 5)
+                        c_count = c_count + 1
             else:
                 next_customers = numpy.random.poisson(self.lamb)
                 if phase > warm_up:
@@ -136,6 +137,7 @@ class PreProcessor1:
                     for c in self.queue:
                         if c is None:
                             self.queue[self.queue.index(c)] = Customer(time, -1, 5)
+                            c_count = c_count + 1
                 else:
                     temp = next_customers  # fill only #next_customers customers in the queue
                     for c in self.queue:
@@ -145,8 +147,9 @@ class PreProcessor1:
                             if c is None:
                                 self.queue[self.queue.index(c)] = Customer(time, -1, 5)
                                 temp = temp - 1
+                                c_count = c_count + 1
             if phase > warm_up:
-                dropped = next_customers - (len(self.queue) - dropped)
+                dropped = next_customers - (c_count - dropped)
         return done, dropped
 
 
@@ -353,13 +356,13 @@ class MainProcessorExtra:
                 if self.queue[c_min_index].service_time + p_time > clock:
                     self.queue[c_min_index].service_time = self.queue[c_min_index].service_time - (clock - p_time)
                     self.queue[c_min_index].service_start_time = time
-                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
                     p_time = clock
                 else:
                     if self.queue[c_min_index].service_start_time == -1:
                         self.queue[c_min_index].service_start_time = time
                     self.queue[c_min_index].service_end = time + time_passed
-                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    self.queue[c_min_index].service_wait = self.queue[c_min_index].service_start_time - self.queue[
+                        c_min_index].arrival_time
                     self.done.append(self.queue[c_min_index])
                     tot_time.append(self.queue[c_min_index])
                     p_time = p_time + self.queue[c_min_index].service_time
@@ -450,7 +453,6 @@ def processor_sharing():
             simulation_R = simulation_R + 1
 
             if sum(all_done) == 6:
-
                 print("reached precision for all results in:", simulation_R - 1)
                 print()
                 # calculate summary statistics
@@ -477,7 +479,7 @@ def processor_sharing():
                 print()
 
                 answer = sum(prec_val['d']) / len(prec_val['d'])
-                answer = str(answer)
+                answer = '%' + str(answer)
                 print("2.1. PB3 : ", answer)
                 print("2.1. PB3 precision : ", all_precs['d'])
                 ans[k].append(answer)
@@ -727,7 +729,7 @@ def first_come_first_served():
                 print()
 
                 answer = sum(prec_val['d']) / len(prec_val['d'])
-                answer = str(answer)
+                answer = '%' + str(answer)
                 print("2.1. PB3 : ", answer)
                 print("2.1. PB3 precision : ", all_precs['d'])
                 ans[k].append(answer)
