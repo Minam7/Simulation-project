@@ -29,7 +29,7 @@ class Customer:
     def __init__(self, arrival_time, service_start_time, mu):
         self.arrival_time = arrival_time
         self.service_start_time = service_start_time
-        self.service_time = abs(numpy.random.exponential(1 / mu))
+        self.service_time = abs(numpy.random.exponential(mu))
         self.service_end = -1
         self.service_wait = 0
 
