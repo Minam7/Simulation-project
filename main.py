@@ -5,7 +5,7 @@ import math
 # import csv
 
 clock = 1  # base unit time
-warm_up = 5000  # number of ignored outcomes
+warm_up = 100  # number of ignored outcomes
 
 # for report pre
 phase = 0
@@ -31,7 +31,7 @@ class Customer:
         self.service_start_time = service_start_time
         self.service_time = abs(numpy.random.exponential(1 / mu))
         self.service_end = -1
-        self.service_wait = -1
+        self.service_wait = 0
 
     def end(self, time):
         self.service_end = time
@@ -101,13 +101,15 @@ class PreProcessor1:
                 if min_s_time + p_time > clock:
                     self.queue[c_min_index].service_time = min_s_time - (clock - p_time)
                     self.queue[c_min_index].service_start_time = time
-                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    self.queue[c_min_index].service_wait = self.queue[c_min_index].service_wait + (
+                            time - self.queue[c_min_index].arrival_time)
                     p_time = clock
                 else:
                     if self.queue[c_min_index].service_start_time == -1:
                         self.queue[c_min_index].service_start_time = time
                     self.queue[c_min_index].service_end = time + time_passed
-                    self.queue[c_min_index].service_wait = time - self.queue[c_min_index].arrival_time
+                    self.queue[c_min_index].service_wait = self.queue[c_min_index].service_wait + (
+                            time - self.queue[c_min_index].arrival_time)
                     if phase > warm_up:
                         time_wait_1 = time_wait_1 + self.queue[c_min_index].service_wait  # for average blocks
                         total_done_1 = total_done_1 + 1  # for average wait time
@@ -410,7 +412,7 @@ def processor_sharing():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessor(8)
         time = 0
-        simulation_times = 1000000
+        simulation_times = 10000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
@@ -618,7 +620,7 @@ def calc_wq(time_wait, total_done):
 
 
 def calc_tot_time(warm):
-    total_times = [c.service_wait + c.service_time for c in warm]
+    total_times = [c.service_end - c.arrival_time for c in warm]
     if total_times == 0 or len(total_times) == 0:
         return 0
     mean_time = sum(total_times) / len(total_times)
@@ -703,7 +705,7 @@ def first_come_first_served():
         pp2 = PreProcessor2(2, 12)
         mp = MainProcessorExtra(k)
         time = 0
-        simulation_times = 1000000
+        simulation_times = 10000
         prec_val = make_dict_for_data()
         simulation_R = 1
         all_done = [0] * 6
