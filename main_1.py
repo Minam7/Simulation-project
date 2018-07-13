@@ -628,7 +628,7 @@ def first_come_first_served():
 
     for k in range(8, 17):
         prec_val = make_dict_for_data()
-        simulation_times = 50000
+        simulation_times = 100000
         simulation_R = 1
         all_done = [0] * 6
         ans[k] = []
