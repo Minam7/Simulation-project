@@ -50,12 +50,12 @@ class PreProcessor1:
         done = []
 
         c_count = 0  # customers count
-        change_in_queue = 0  # for number of dropped customer
+        dropped = 0  # for number of dropped customer
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
 
-        change_in_queue = c_count
+        dropped = c_count
 
         if phase > warm_up:
             customer_in_queue_1 = customer_in_queue_1 + c_count  # for average # of customer in queue
@@ -74,7 +74,7 @@ class PreProcessor1:
                 for i in range(next_customers):
                     self.queue[i] = Customer(time, -1, 5)
 
-            change_in_queue = len(self.queue) - change_in_queue
+            dropped = next_customers - (len(self.queue) - dropped)
 
         else:
             # processing time
@@ -144,9 +144,8 @@ class PreProcessor1:
                             if c is None:
                                 self.queue[self.queue.index(c)] = Customer(time, -1, 5)
                                 temp = temp - 1
-
-        change_in_queue = len(self.queue) - change_in_queue
-        return done, change_in_queue
+        dropped = next_customers - (len(self.queue) - dropped)
+        return done, dropped
 
 
 class PreProcessor2:
@@ -247,11 +246,11 @@ class MainProcessor:
         c_count = 0  # customers count
         tot_time = []  # for calculating total time of a customer in system
 
-        change_in_queue = 0  # for number of dropped customer
+        dropped = 0  # for number of dropped customer
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
-        change_in_queue = c_count
+        dropped = c_count
         if phase_m > warm_up:
             customer_in_queue_m = customer_in_queue_m + c_count
             turn_m = turn_m + 1
@@ -270,7 +269,7 @@ class MainProcessor:
                         break
                 if c_count == self.k:
                     break
-            change_in_queue = c_count - change_in_queue  # number of dropped customer
+            dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
             # process
             for c in self.queue:
                 if c is not None:
@@ -291,7 +290,7 @@ class MainProcessor:
                         self.queue[index].service_time = self.queue[index].service_time - (clock / c_count)
                         self.queue[index].service_start_time = time
 
-        return change_in_queue
+        return dropped
 
 
 class MainProcessorExtra:
@@ -307,11 +306,11 @@ class MainProcessorExtra:
         c_count = 0  # customers count
         tot_time = []  # for calculating total time of a customer in system
 
-        change_in_queue = 0  # for number of dropped customer
+        dropped = 0  # for number of dropped customer
         for c in self.queue:
             if c is not None:
                 c_count = c_count + 1
-        change_in_queue = c_count
+        dropped = c_count
         if phase_m > warm_up:
             customer_in_queue_m = customer_in_queue_m + c_count
             turn_m = turn_m + 1
@@ -330,7 +329,7 @@ class MainProcessorExtra:
                         break
                 if c_count == self.k:
                     break
-            change_in_queue = c_count - change_in_queue  # number of dropped customer
+            dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
             # process section
             p_time = 0  # processing time
             while clock - p_time > 0:
@@ -367,7 +366,7 @@ class MainProcessorExtra:
                     c_count = c_count - 1
                 time = time + time_passed
 
-        return change_in_queue
+        return dropped
 
 
 def processor_sharing():
