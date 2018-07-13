@@ -404,6 +404,7 @@ def processor_sharing():
             turn_m = 0
             phase_m = 0
             blocked_m = 0
+
             while len(mp.done) < simulation_times:
                 output1, change_per_simulation = pp1.simulation(clock, time)
                 blocked_1 += change_per_simulation
@@ -445,7 +446,9 @@ def processor_sharing():
             simulation_R = simulation_R + 1
 
             if sum(all_done) == 6:
+
                 print("reached precision for all results in:", simulation_R - 1)
+                print()
                 # calculate summary statistics
                 print('General Statistics In PS : ')
                 print('K = ' + str(k))
@@ -695,6 +698,7 @@ def first_come_first_served():
 
             if sum(all_done) == 6:
                 print("reached precision for all results in:", simulation_R - 1)
+                print()
                 # calculate summary statistics
                 print('General Statistics In FCFS : ')
                 print('K = ' + str(k))
