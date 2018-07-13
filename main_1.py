@@ -29,7 +29,7 @@ class Customer:
     def __init__(self, arrival_time, service_start_time, mu):
         self.arrival_time = arrival_time
         self.service_start_time = service_start_time
-        self.service_time = abs(numpy.random.exponential(mu))
+        self.service_time = abs(numpy.random.exponential(1/mu))
         self.service_end = -1
         self.service_wait = 0
 
@@ -74,7 +74,8 @@ class PreProcessor1:
                 for i in range(next_customers):
                     self.queue[i] = Customer(time, -1, 5)
 
-            dropped = next_customers - (len(self.queue) - dropped)
+            if phase > warm_up:
+                dropped = next_customers - (len(self.queue) - dropped)
 
         else:
             # processing time
@@ -144,7 +145,8 @@ class PreProcessor1:
                             if c is None:
                                 self.queue[self.queue.index(c)] = Customer(time, -1, 5)
                                 temp = temp - 1
-        dropped = next_customers - (len(self.queue) - dropped)
+            if phase > warm_up:
+                dropped = next_customers - (len(self.queue) - dropped)
         return done, dropped
 
 
@@ -269,7 +271,8 @@ class MainProcessor:
                         break
                 if c_count == self.k:
                     break
-            dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
+            if phase > warm_up:
+                dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
             # process
             for c in self.queue:
                 if c is not None:
@@ -329,7 +332,8 @@ class MainProcessorExtra:
                         break
                 if c_count == self.k:
                     break
-            dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
+            if phase > warm_up:
+                dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
             # process section
             p_time = 0  # processing time
             while clock - p_time > 0:
