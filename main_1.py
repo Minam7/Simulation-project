@@ -271,7 +271,7 @@ class MainProcessor:
                         break
                 if c_count == self.k:
                     break
-            if phase > warm_up:
+            if phase_m > warm_up:
                 dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
             # process
             for c in self.queue:
@@ -285,7 +285,7 @@ class MainProcessor:
                         tot_time.append(c)  # customer done in one clock
                         self.queue[index] = None
                         phase_m = phase_m + 1
-                        if phase > warm_up:
+                        if phase_m > warm_up:
                             total_done_m = total_done_m + 1  # for block chance
 
                     else:
@@ -332,7 +332,7 @@ class MainProcessorExtra:
                         break
                 if c_count == self.k:
                     break
-            if phase > warm_up:
+            if phase_m > warm_up:
                 dropped = len(next_customers) - (c_count - dropped)  # number of dropped customer
             # process section
             p_time = 0  # processing time
